@@ -5,8 +5,8 @@ import os
 
 from setuptools import setup
 
-NAME = 'okreport'
-DESCRIPTION = 'okreport'
+NAME = 'python-okreport'
+DESCRIPTION = 'simple report automatic rendering'
 URL = 'https://github.com/lawley0316/okreport'
 EMAIL = 'lawley0316@gmail.com'
 AUTHOR = 'Lawley'
