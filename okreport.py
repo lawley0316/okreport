@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import sys
 import base64
+from importlib import resources
 
 from jinja2 import Template
 
@@ -25,7 +27,8 @@ class Image(Var):
         file = self.get_file(result, conf, env)
         if file is None:
             return None
-        data = open(file, 'rb').read()
+        with open(file, 'rb') as fp:
+            data = fp.read()
         encoding = sys.getdefaultencoding()
         b64text = base64.b64encode(data).decode(encoding)
         ext = os.path.splitext(file)[1][1:]
@@ -35,7 +38,9 @@ class Image(Var):
 class Paragraph:
     """Paragraph，consists of multiple Vars."""
     def get_template_text(self, result, conf, env):
-        return self.__doc__
+        pkg = self.__module__.split('.')[0]
+        module = re.sub(r'(?!^)([A-Z]+)', r'_\1', self.__class__.__name__).lower()
+        return resources.path(f'{pkg}.templates', f'{module}.html').open().read()  # noqa
 
     def parse(self, result, conf, env):
         data = {}
@@ -58,7 +63,8 @@ class Paragraph:
 class Report:
     """Report，consists of Paragraphs. """
     def get_template_text(self, result, conf, env):
-        return self.__doc__
+        pkg = self.__module__.split('.')[0]
+        return resources.path(f'{pkg}.templates', 'base.html').open().read()  # noqa
 
     def render(self, result, conf, env):
         paragraph_texts = {}

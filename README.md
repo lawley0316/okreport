@@ -47,6 +47,9 @@ class ResultParagraph(Paragraph):
     x = ResultX()
     y = ResultY()
     sum = ResultSum()
+    
+    def get_template_text(self, result, conf, env):  # noqa
+        return self.__doc__
 
 
 class ConfParagraph(Paragraph):
@@ -56,6 +59,9 @@ class ConfParagraph(Paragraph):
     x = ConfX()
     y = ConfY()
     sum = ConfSum()
+    
+    def get_template_text(self, result, conf, env):  # noqa
+        return self.__doc__
 
 
 class MyReport(Report):
@@ -65,6 +71,9 @@ class MyReport(Report):
     """
     p1 = ResultParagraph()
     p2 = ConfParagraph()
+    
+    def get_template_text(self, result, conf, env):  # noqa
+        return self.__doc__
 
 
 result = {'x': 1, 'y': 2}
