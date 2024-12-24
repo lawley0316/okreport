@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
-import re
 import sys
 import base64
-from importlib import resources
 
-from jinja2 import Template
+from jinja2 import Environment, PackageLoader
 
 
 class Var:
-    """
+    """Variable.
     Var, where each Var object represents a piece of variable data within a report, have three sources:
     (1) Results, which are the outcomes of the pipeline being run, corresponding to the parameter "result";
     (2) Configuration, which refers to the parameters when running the process, corresponding to the parameter "conf";
@@ -20,6 +18,7 @@ class Var:
 
 
 class Image(Var):
+    """Image variable."""
     def get_file(self, result, conf, env):
         raise NotImplementedError
 
@@ -36,11 +35,7 @@ class Image(Var):
 
 
 class Paragraph:
-    """Paragraph，consists of multiple Vars."""
-    def get_template_text(self, result, conf, env):
-        pkg = self.__module__.split('.')[0]
-        module = re.sub(r'(?!^)([A-Z]+)', r'_\1', self.__class__.__name__).lower()
-        return resources.path(f'{pkg}.templates', f'{module}.html').open().read()  # noqa
+    """Multiple variables."""
 
     def parse(self, result, conf, env):
         data = {}
@@ -53,33 +48,22 @@ class Paragraph:
             data[name] = var.parse(result, conf, env)
         return data
 
-    def render(self, result, conf, env):
-        data = self.parse(result, conf, env)
-        template_text = self.get_template_text(result, conf, env)
-        template = Template(template_text)
-        return template.render(env=env, conf=conf, **data)
-
 
 class Report:
-    """Report，consists of Paragraphs. """
-    def get_template_text(self, result, conf, env):
+    """Report."""
+    def get_template(self):
         pkg = self.__module__.split('.')[0]
-        return resources.path(f'{pkg}.templates', 'base.html').open().read()  # noqa
+        env = Environment(loader=PackageLoader(pkg))
+        return env.get_template('report.html')
 
     def render(self, result, conf, env):
-        paragraph_texts = {}
+        paragraphs = {}
         for name in dir(self):
             if name.startswith('_'):
                 continue
             paragraph = getattr(self, name)
             if not isinstance(paragraph, Paragraph):
                 continue
-            paragraph_texts[name] = paragraph.render(result, conf, env)
-        template_text = self.get_template_text(result, conf, env)
-        template = Template(template_text)
-        return template.render(env=env, conf=conf, **paragraph_texts)
-
-    def save(self, result, conf, env, file):
-        report_text = self.render(result, conf, env)
-        with open(file, 'w') as fp:
-            fp.write(report_text)
+            paragraphs[name] = paragraph.parse(result, conf, env)
+        template = self.get_template()
+        return template.render(env=env, conf=conf, **paragraphs)
